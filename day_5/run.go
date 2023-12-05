@@ -128,30 +128,12 @@ func toSeeds(line string) (seeds []int) {
 	return
 }
 
-func sortPairs(pairs []pair) []pair {
-	sort.Slice(pairs, func(i, j int) bool { return pairs[i].min < pairs[j].min })
-	return pairs
-}
 
 func sortOps(ops []op) []op {
 	sort.Slice(ops, func(i, j int) bool { return ops[i].min < ops[j].min })
 	return ops
 }
 
-func fillGaps(pairs []pair) []pair {
-	s := 0
-	var filled []pair
-	pairs = sortPairs(pairs)
-	for _, p := range pairs {
-		if p.min > s+1 {
-			filled = append(filled, pair{s, p.min})
-		}
-		filled = append(filled, p)
-		s = p.max
-	}
-	filled = append(filled, pair{s, BIG_NUMBER})
-	return filled
-}
 
 func toPairs(seeds []int) (pairs []pair) {
 	for i := 0; i < len(seeds); i += 2 {
@@ -206,53 +188,6 @@ func (m mapping) toOps() (ops []op) {
 	return
 }
 
-func (m mapping) applyPair(p pair) (in []pair, out []pair) {
-	for i := 0; i < len(m.sources); i++ {
-		s := m.sources[i]
-		n := m.sizes[i]
-		if p.min > s+n-1 || p.max < s {
-			continue
-		}
-
-		var l int
-		var r int
-		if p.min >= s {
-			l = p.min
-		} else {
-			in = append(in, pair{p.min, s - 1})
-			l = s
-		}
-
-		if p.max <= s+n-1 {
-			r = p.max
-		} else {
-			in = append(in, pair{s + n - 1, p.max})
-			r = s + n - 1
-		}
-		in = append(in, pair{l, r})
-	}
-	if len(in) == 0 {
-		in = append(in, p)
-	}
-	for _, v := range in {
-		out = append(out, pair{m.apply(v.min), m.apply(v.max)})
-	}
-	return
-}
-
-func (m mapping) applyPairs(pairs []pair) (in []pair, out []pair) {
-	for _, p := range pairs {
-		i, o := m.applyPair(p)
-		fmt.Println(i, o, m)
-		for j := 0; j < len(i); j++ {
-			in = append(in, i[j])
-			out = append(out, o[j])
-		}
-	}
-	fmt.Println()
-	return
-}
-
 func min(arr []int) int {
 	lowest := BIG_NUMBER
 	for _, v := range arr {
@@ -261,15 +196,6 @@ func min(arr []int) int {
 		}
 	}
 	return lowest
-}
-
-func (o op) splitAt(i int) (op, op) {
-	if i < o.min || i > o.max+1 {
-		log.Fatal("Cannot split")
-	}
-	left := op{o.min, i, o.diff}
-	right := op{i + 1, o.max, o.diff}
-	return left, right
 }
 
 func applyOps(ops []op, p pair) (result []pair) {
@@ -301,71 +227,6 @@ func applyOps(ops []op, p pair) (result []pair) {
 	return
 }
 
-// Combine two successive op lists
-func fuse(left []op, right []op) (fused []op) {
-	il := 0
-	ir := 0
-	l := left[il]
-	r := right[ir]
-	var lSplit []op
-	var rSplit []op
-	fmt.Println()
-	fmt.Println(left, right)
-	fmt.Println()
-	for {
-		var n op
-
-		if l.min > r.min {
-			n, r = r.splitAt(l.min)
-			rSplit = append(rSplit, n)
-		} else if l.min < r.min {
-			n, l = l.splitAt(r.min)
-			lSplit = append(lSplit, n)
-		} else {
-			// do nothing
-		}
-
-		if l.max < r.max {
-			n, r = r.splitAt(l.max)
-			lSplit = append(lSplit, l)
-			rSplit = append(rSplit, n)
-			if il == len(left)-1 && ir == len(right)-1 {
-				break
-			}
-			il++
-			l = left[il]
-		} else if l.max > r.max {
-			n, l = l.splitAt(r.max)
-			lSplit = append(lSplit, n)
-			rSplit = append(rSplit, r)
-			if il == len(left)-1 && ir == len(right)-1 {
-				break
-			}
-			ir++
-			r = right[ir]
-		} else {
-			lSplit = append(lSplit, l)
-			rSplit = append(rSplit, r)
-			if il == len(left)-1 && ir == len(right)-1 {
-				break
-			}
-			il++
-			ir++
-			l = left[il]
-			r = right[ir]
-		}
-	}
-
-	for i := 0; i < len(lSplit); i++ {
-		if lSplit[i].min + lSplit[i].diff + rSplit[i].diff < 0{
-			fmt.Println(lSplit[i], rSplit[i])
-			panic(-1)
-		}
-		fusedOp := op{lSplit[i].min, lSplit[i].max, lSplit[i].diff + rSplit[i].diff}
-		fused = append(fused, fusedOp)
-	}
-	return
-}
 
 func main() {
 	lines := readLines("day_5/input.txt")
