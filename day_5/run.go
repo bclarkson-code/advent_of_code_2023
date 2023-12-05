@@ -357,6 +357,10 @@ func fuse(left []op, right []op) (fused []op) {
 	}
 
 	for i := 0; i < len(lSplit); i++ {
+		if lSplit[i].min + lSplit[i].diff + rSplit[i].diff < 0{
+			fmt.Println(lSplit[i], rSplit[i])
+			panic(-1)
+		}
 		fusedOp := op{lSplit[i].min, lSplit[i].max, lSplit[i].diff + rSplit[i].diff}
 		fused = append(fused, fusedOp)
 	}
@@ -396,19 +400,19 @@ func main() {
 
 	next = "seed"
 
-	combined := maps[0].toOps()
-	for i := 1; i < len(maps); i++ {
-		combined = fuse(combined, maps[i].toOps())
-	}
-	var out []pair
-	for _, p := range pairs {
-		for _, o := range applyOps(combined, p){
-			out = append(out, o)
+	ins := pairs
+	var outs []pair
+	for i := 0; i < len(maps); i++ {
+		outs = []pair{}
+		for _, p := range ins {
+			for _, o := range applyOps(maps[i].toOps(), p) {
+				outs = append(outs, o)
+			}
 		}
+		ins = outs
 	}
-
 	var starts []int
-	for _, p := range out {
+	for _, p := range outs {
 		starts = append(starts, p.min)
 	}
 	fmt.Println(min(starts))
