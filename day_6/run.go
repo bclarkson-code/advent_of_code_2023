@@ -86,10 +86,6 @@ func waysToWin(l float64, r float64) int {
 	return int(r - l + 1)
 }
 
-func dist(c float64, t float64) float64 {
-	return c * (t-c)
-}
-
 func main() {
 	lines := readLines("day_6/input.txt")
 	times := extractInts(lines[0])
